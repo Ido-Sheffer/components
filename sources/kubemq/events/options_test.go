@@ -1,4 +1,4 @@
-package command
+package events
 
 import (
 	"github.com/kubemq-hub/components/config"
