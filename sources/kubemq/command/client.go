@@ -53,9 +53,10 @@ func (c *Client) Init(ctx context.Context, cfg config.Metadata) error {
 		kubemq.WithClientId(c.opts.clientId),
 		kubemq.WithTransportType(kubemq.TransportTypeGRPC),
 		kubemq.WithAuthToken(c.opts.authToken),
-		kubemq.WithMaxReconnects(defaultMaxReconnects),
-		kubemq.WithAutoReconnect(defaultAutoReconnect),
-		kubemq.WithReconnectInterval(defaultMaxReconnects))
+		kubemq.WithCheckConnection(true),
+		kubemq.WithMaxReconnects(c.opts.maxReconnects),
+		kubemq.WithAutoReconnect(c.opts.autoReconnect),
+		kubemq.WithReconnectInterval(c.opts.reconnectIntervalSeconds))
 	return nil
 }
 
@@ -87,20 +88,20 @@ func (c *Client) run(ctx context.Context, commandCh <-chan *kubemq.CommandReceiv
 		select {
 		case command := <-commandCh:
 			go func(q *kubemq.CommandReceive) {
-				commandResponse := c.client.R().
+				cmdResponse := c.client.R().
 					SetRequestId(command.Id).
 					SetResponseTo(command.ResponseTo)
 				resp, err := c.processCommand(ctx, command)
 				if err != nil {
-					commandResponse.SetError(err)
+					cmdResponse.SetError(err)
 				} else {
 					if resp.Error != "" {
-						commandResponse.SetError(fmt.Errorf(resp.Error))
+						cmdResponse.SetError(fmt.Errorf(resp.Error))
 					} else {
-						commandResponse.SetExecutedAt(time.Now())
+						cmdResponse.SetExecutedAt(time.Now())
 					}
 				}
-				err = commandResponse.Send(ctx)
+				err = cmdResponse.Send(ctx)
 				if err != nil {
 					c.log.Errorf("error sending command response %s", err.Error())
 				}
