@@ -6,6 +6,8 @@ import (
 	"github.com/kubemq-hub/components/config"
 	"github.com/kubemq-hub/components/targets/null"
 	"github.com/kubemq-hub/components/types"
+	"github.com/kubemq-io/kubemq-go"
+	"github.com/nats-io/nuid"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -42,16 +44,26 @@ func setupClient(ctx context.Context, target targets.Target) (*Client, error) {
 	time.Sleep(time.Second)
 	return c, nil
 }
+func sendQuery(t *testing.T, ctx context.Context, req *types.Request, sendChannel string, timeout time.Duration) (*types.Response, error) {
+	client, err := kubemq.NewClient(ctx,
+		kubemq.WithAddress("localhost", 50000),
+		kubemq.WithClientId(nuid.Next()),
+		kubemq.WithTransportType(kubemq.TransportTypeGRPC))
+	require.NoError(t, err)
+	queryResponse, err := client.SetQuery(req.ToQuery()).SetChannel(sendChannel).SetTimeout(timeout).Send(ctx)
+	require.NoError(t, err)
+	return types.ParseResponseFromQueryResponse(queryResponse)
 
+}
 func TestClient_processQuery(t *testing.T) {
 	tests := []struct {
-		name         string
-		target       targets.Target
-		req          *types.Request
-		wantResp     *types.Response
-		timeout      time.Duration
-		wantQueryErr bool
-		wantErr      bool
+		name     string
+		target   targets.Target
+		req      *types.Request
+		wantResp *types.Response
+		timeout  time.Duration
+		sendCh   string
+		wantErr  bool
 	}{
 		{
 			name: "request",
@@ -60,63 +72,53 @@ func TestClient_processQuery(t *testing.T) {
 				DoError:       nil,
 				ResponseError: nil,
 			},
-			req:          types.NewRequest().SetData([]byte("some-data")),
-			wantResp:     types.NewResponse().SetData([]byte("some-data")),
-			timeout:      5 * time.Second,
-			wantQueryErr: false,
-			wantErr:      false,
+			req:      types.NewRequest().SetData([]byte("some-data")),
+			wantResp: types.NewResponse().SetData([]byte("some-data")),
+			timeout:  5 * time.Second,
+			sendCh:   "query",
+			wantErr:  false,
+		},
+		{
+			name: "request with target error",
+			target: &null.Client{
+				Delay:         0,
+				DoError:       nil,
+				ResponseError: fmt.Errorf("error"),
+			},
+			req:      types.NewRequest().SetData([]byte("some-data")),
+			wantResp: types.NewResponse().SetError("error"),
+			timeout:  5 * time.Second,
+			sendCh:   "query",
+
+			wantErr: false,
 		},
 		{
 			name: "request with target do error",
 			target: &null.Client{
 				Delay:         0,
-				DoError:       fmt.Errorf("do-error"),
+				DoError:       fmt.Errorf("error"),
 				ResponseError: nil,
 			},
-			req:          types.NewRequest().SetData([]byte("some-data")),
-			wantResp:     types.NewResponse().SetError("do-error"),
-			timeout:      5 * time.Second,
-			wantQueryErr: true,
-			wantErr:      false,
+			req:      types.NewRequest().SetData([]byte("some-data")),
+			wantResp: types.NewResponse().SetError("error"),
+			timeout:  5 * time.Second,
+			sendCh:   "query",
+
+			wantErr: false,
 		},
 		{
-			name: "request with target remote error",
+			name: "request with timeout error error",
 			target: &null.Client{
-				Delay:         0,
-				DoError:       nil,
-				ResponseError: fmt.Errorf("do-error"),
-			},
-			req:          types.NewRequest().SetData([]byte("some-data")),
-			wantResp:     types.NewResponse().SetError("do-error"),
-			timeout:      5 * time.Second,
-			wantQueryErr: false,
-			wantErr:      false,
-		},
-		{
-			name: "bad request",
-			target: &null.Client{
-				Delay:         0,
+				Delay:         3,
 				DoError:       nil,
 				ResponseError: nil,
 			},
-			req:          nil,
-			wantResp:     nil,
-			timeout:      5 * time.Second,
-			wantQueryErr: true,
-			wantErr:      false,
-		},
-		{
-			name: "request timeout",
-			target: &null.Client{
-				Delay:         4 * time.Second,
-				DoError:       nil,
-				ResponseError: nil,
-			},
-			req:          types.NewRequest().SetData([]byte("some-data")),
-			wantResp:     nil,
-			timeout:      3 * time.Second,
-			wantQueryErr: false,
-			wantErr:      true,
+			req:      types.NewRequest().SetData([]byte("some-data")),
+			wantResp: types.NewResponse(),
+			timeout:  2 * time.Second,
+			sendCh:   "query",
+
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
@@ -128,28 +130,13 @@ func TestClient_processQuery(t *testing.T) {
 			defer func() {
 				_ = c.Stop()
 			}()
-			query := c.client.Q().
-				SetChannel("query").
-				SetTimeout(tt.timeout).
-				SetMetadata("some metadata")
-			if tt.req != nil {
-				query.SetBody(tt.req.MarshalBinary())
-			}
-			queryResp, err := query.Send(ctx)
+			gotResp, err := sendQuery(t, ctx, tt.req, tt.sendCh, tt.timeout)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
-			require.NotNil(t, queryResp)
-			if tt.wantQueryErr {
-				require.NotEmpty(t, queryResp.Error)
-				return
-			}
-			require.NotNil(t, queryResp.Body)
-			gotResponse := &types.Response{}
-			require.NoError(t, gotResponse.UnmarshalBinary(queryResp.Body))
-			require.EqualValues(t, tt.wantResp, gotResponse)
+			require.EqualValues(t, tt.wantResp, gotResp)
 		})
 	}
 }

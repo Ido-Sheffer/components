@@ -11,6 +11,9 @@ func NewMetadata() Metadata {
 	return map[string]string{}
 }
 func UnmarshallMetadata(meta string) (Metadata, error) {
+	if meta == "" {
+		return NewMetadata(), nil
+	}
 	m := Metadata{}
 	err := json.UnmarshalFromString(meta, &m)
 	if err != nil {

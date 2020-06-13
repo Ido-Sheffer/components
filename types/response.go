@@ -1,6 +1,9 @@
 package types
 
-import "github.com/kubemq-io/kubemq-go"
+import (
+	"fmt"
+	"github.com/kubemq-io/kubemq-go"
+)
 
 type Response struct {
 	Metadata Metadata `json:"metadata"`
@@ -32,9 +35,11 @@ func (r *Response) SetData(value []byte) *Response {
 }
 
 func (r *Response) ToEvent() *kubemq.Event {
+
 	return kubemq.NewEvent().
 		SetMetadata(r.Metadata.String()).
 		SetBody(r.Data)
+
 }
 func (r *Response) ToEventStore() *kubemq.EventStore {
 	return kubemq.NewEventStore().
@@ -63,4 +68,29 @@ func (r *Response) ToResponse() *kubemq.Response {
 	return kubemq.NewResponse().
 		SetMetadata(r.Metadata.String()).
 		SetBody(r.Data)
+}
+
+func parseResponse(meta string, body []byte, errText string) (*Response, error) {
+	res := NewResponse()
+	parsedMeta, err := UnmarshallMetadata(meta)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing response metadata, %w", err)
+	}
+	return res.
+			SetMetadata(parsedMeta).
+			SetData(body).
+			SetError(errText),
+		nil
+}
+func ParseResponseFromEvent(event *kubemq.Event) (*Response, error) {
+	return parseResponse(event.Metadata, event.Body, "")
+}
+func ParseResponseFromEventReceive(event *kubemq.EventStoreReceive) (*Response, error) {
+	return parseResponse(event.Metadata, event.Body, "")
+}
+func ParseResponseFromCommandResponse(resp *kubemq.CommandResponse) (*Response, error) {
+	return parseResponse("", nil, resp.Error)
+}
+func ParseResponseFromQueryResponse(resp *kubemq.QueryResponse) (*Response, error) {
+	return parseResponse(resp.Metadata, resp.Body, resp.Error)
 }

@@ -120,58 +120,6 @@ func TestClient_processCommand(t *testing.T) {
 
 			wantErr: false,
 		},
-		//{
-		//	name: "request with target do error",
-		//	target: &null.Client{
-		//		Delay:         0,
-		//		DoError:       fmt.Errorf("do-error"),
-		//		ResponseError: nil,
-		//	},
-		//	req:          types.NewRequest().SetData([]byte("some-data")),
-		//	wantResp:     types.NewResponse().SetError("do-error"),
-		//	timeout:      5 * time.Second,
-		//	wantQueryErr: true,
-		//	wantErr:      false,
-		//},
-		//{
-		//	name: "request with target remote error",
-		//	target: &null.Client{
-		//		Delay:         0,
-		//		DoError:       nil,
-		//		ResponseError: fmt.Errorf("do-error"),
-		//	},
-		//	req:          types.NewRequest().SetData([]byte("some-data")),
-		//	wantResp:     types.NewResponse().SetError("do-error"),
-		//	timeout:      5 * time.Second,
-		//	wantQueryErr: false,
-		//	wantErr:      false,
-		//},
-		//{
-		//	name: "bad request",
-		//	target: &null.Client{
-		//		Delay:         0,
-		//		DoError:       nil,
-		//		ResponseError: nil,
-		//	},
-		//	req:          nil,
-		//	wantResp:     nil,
-		//	timeout:      5 * time.Second,
-		//	wantQueryErr: true,
-		//	wantErr:      false,
-		//},
-		//{
-		//	name: "request timeout",
-		//	target: &null.Client{
-		//		Delay:         4 * time.Second,
-		//		DoError:       nil,
-		//		ResponseError: nil,
-		//	},
-		//	req:          types.NewRequest().SetData([]byte("some-data")),
-		//	wantResp:     nil,
-		//	timeout:      3 * time.Second,
-		//	wantQueryErr: false,
-		//	wantErr:      true,
-		//},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

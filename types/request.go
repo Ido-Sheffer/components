@@ -43,6 +43,26 @@ func (r *Request) MarshalBinary() []byte {
 	data, _ := json.Marshal(r)
 	return data
 }
+func (r *Request) ToEvent() *kubemq.Event {
+	return kubemq.NewEvent().
+		SetMetadata(r.Metadata.String()).
+		SetBody(r.Data)
+}
+func (r *Request) ToEventStore() *kubemq.EventStore {
+	return kubemq.NewEventStore().
+		SetMetadata(r.Metadata.String()).
+		SetBody(r.Data)
+}
+func (r *Request) ToCommand() *kubemq.Command {
+	return kubemq.NewCommand().
+		SetMetadata(r.Metadata.String()).
+		SetBody(r.Data)
+}
+func (r *Request) ToQuery() *kubemq.Query {
+	return kubemq.NewQuery().
+		SetMetadata(r.Metadata.String()).
+		SetBody(r.Data)
+}
 
 func parseRequest(meta string, body []byte) (*Request, error) {
 	req := NewRequest()
