@@ -24,7 +24,7 @@ func parseMetadata(meta types.Metadata, opts options) (metadata, error) {
 	}
 	timout, err := meta.ParseIntWithRange("timeout_seconds", opts.defaultTimeoutSeconds, 1, math.MaxInt32)
 	if err != nil {
-		return metadata{}, fmt.Errorf("error ")
+		return metadata{}, fmt.Errorf("error parsing timeout seconds, %w", err)
 	}
 	m.timeout = time.Duration(timout) * time.Second
 	return m, nil

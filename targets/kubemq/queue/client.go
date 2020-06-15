@@ -1,4 +1,4 @@
-package command
+package queue
 
 import (
 	"context"
@@ -43,25 +43,28 @@ func (c *Client) Init(ctx context.Context, cfg config.Metadata) error {
 }
 
 func (c *Client) Do(ctx context.Context, request *types.Request) (*types.Response, error) {
-	cmdMetadata, err := parseMetadata(request.Metadata, c.opts)
+	queueMetadata, err := parseMetadata(request.Metadata, c.opts)
 	if err != nil {
 		return nil, err
 	}
-	cmdResponse, err := c.client.C().
-		SetId(cmdMetadata.id).
-		SetTimeout(cmdMetadata.timeout).
-		SetChannel(cmdMetadata.channel).
-		SetMetadata(cmdMetadata.metadata).
+	queueMessage := c.client.NewQueueMessage().
+		SetId(queueMetadata.id).
+		SetChannel(queueMetadata.channel).
+		SetMetadata(queueMetadata.metadata).
 		SetBody(request.Data).
-		Send(ctx)
+		SetPolicyDelaySeconds(queueMetadata.delaySeconds).
+		SetPolicyExpirationSeconds(queueMetadata.expirationSeconds).
+		SetPolicyMaxReceiveCount(queueMetadata.maxReceiveCount).
+		SetPolicyMaxReceiveQueue(queueMetadata.deadLetterQueue)
+	result, err := queueMessage.Send(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return types.NewResponse().
-			SetMetadataKeyValue("error", cmdResponse.Error).
-			SetMetadataKeyValue("command_id", cmdResponse.CommandId).
-			SetMetadataKeyValue("response_client_id", cmdResponse.ResponseClientId).
-			SetMetadataKeyValue("executed", fmt.Sprintf("%t", cmdResponse.Executed)).
-			SetMetadataKeyValue("executed_at", fmt.Sprintf("%s", cmdResponse.ExecutedAt)),
+			SetMetadataKeyValue("error", result.Error).
+			SetMetadataKeyValue("queue_id", queueMetadata.id).
+			SetMetadataKeyValue("delayed_to", fmt.Sprintf("%d", result.DelayedTo)).
+			SetMetadataKeyValue("expire_at", fmt.Sprintf("%d", result.ExpirationAt)).
+			SetMetadataKeyValue("is_error", fmt.Sprintf("%t", result.IsError)),
 		nil
 }
