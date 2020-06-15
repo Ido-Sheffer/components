@@ -8,14 +8,12 @@ import (
 type Response struct {
 	Metadata Metadata `json:"metadata"`
 	Data     []byte   `json:"data"`
-	Error    string   `json:"error"`
 }
 
 func NewResponse() *Response {
 	return &Response{
 		Metadata: NewMetadata(),
 		Data:     nil,
-		Error:    "",
 	}
 }
 
@@ -23,9 +21,8 @@ func (r *Response) SetMetadata(value Metadata) *Response {
 	r.Metadata = value
 	return r
 }
-
-func (r *Response) SetError(value string) *Response {
-	r.Error = value
+func (r *Response) SetMetadataKeyValue(key, value string) *Response {
+	r.Metadata.Set(key, value)
 	return r
 }
 
@@ -76,10 +73,13 @@ func parseResponse(meta string, body []byte, errText string) (*Response, error) 
 	if err != nil {
 		return nil, fmt.Errorf("error parsing response metadata, %w", err)
 	}
+	if errText != "" {
+		parsedMeta.Set("error", errText)
+	}
 	return res.
 			SetMetadata(parsedMeta).
-			SetData(body).
-			SetError(errText),
+			SetData(body),
+
 		nil
 }
 func ParseResponseFromEvent(event *kubemq.Event) (*Response, error) {

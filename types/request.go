@@ -14,11 +14,18 @@ type Request struct {
 }
 
 func NewRequest() *Request {
-	return &Request{}
+	return &Request{
+		Metadata: NewMetadata(),
+		Data:     nil,
+	}
 }
 
 func (r *Request) SetMetadata(value Metadata) *Request {
 	r.Metadata = value
+	return r
+}
+func (r *Request) SetMetadataKeyValue(key, value string) *Request {
+	r.Metadata.Set(key, value)
 	return r
 }
 
