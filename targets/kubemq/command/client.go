@@ -52,6 +52,7 @@ func (c *Client) Do(ctx context.Context, request *types.Request) (*types.Respons
 		SetId(cmdMetadata.id).
 		SetTimeout(cmdMetadata.timeout).
 		SetChannel(cmdMetadata.channel).
+		SetMetadata(cmdMetadata.metadata).
 		SetBody(request.Data).
 		Send(ctx)
 	if err != nil {

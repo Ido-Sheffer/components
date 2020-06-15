@@ -159,6 +159,31 @@ func TestClient_Do(t *testing.T) {
 			wantErr:  true,
 		},
 		{
+			name: "request error - bad metadata - no channel",
+			cfg: config.Metadata{
+				Name: "kubemq-target",
+				Kind: "",
+				Properties: map[string]string{
+					"host": "localhost",
+					"port": "50000",
+				},
+			},
+			mockReceiver: &mockQueryReceiver{
+				host:           "localhost",
+				port:           50000,
+				channel:        "queries",
+				executionDelay: 0,
+				executionError: nil,
+				executionTime:  0,
+			},
+			req: types.NewRequest().
+				SetMetadataKeyValue("id", "id").
+				SetMetadataKeyValue("channel", "").
+				SetMetadataKeyValue("timeout_seconds", "5"),
+			wantResp: nil,
+			wantErr:  true,
+		},
+		{
 			name: "request error - bad metadata - invalid timeout seconds",
 			cfg: config.Metadata{
 				Name: "kubemq-target",

@@ -43,13 +43,14 @@ func (c *Client) Init(ctx context.Context, cfg config.Metadata) error {
 }
 
 func (c *Client) Do(ctx context.Context, request *types.Request) (*types.Response, error) {
-	cmdMetadata, err := parseMetadata(request.Metadata, c.opts)
+	eventMetadata, err := parseMetadata(request.Metadata, c.opts)
 	if err != nil {
 		return nil, err
 	}
 	err = c.client.E().
-		SetId(cmdMetadata.id).
-		SetChannel(cmdMetadata.channel).
+		SetId(eventMetadata.id).
+		SetChannel(eventMetadata.channel).
+		SetMetadata(eventMetadata.metadata).
 		SetBody(request.Data).
 		Send(ctx)
 	if err != nil {
@@ -57,6 +58,6 @@ func (c *Client) Do(ctx context.Context, request *types.Request) (*types.Respons
 	}
 	return types.NewResponse().
 			SetMetadataKeyValue("error", "").
-			SetMetadataKeyValue("event_id", cmdMetadata.id),
+			SetMetadataKeyValue("event_id", eventMetadata.id),
 		nil
 }
