@@ -126,3 +126,18 @@ func (m Metadata) MustParseBool(key string) (bool, error) {
 		return false, fmt.Errorf("key %s not foud for bool coneversion", val)
 	}
 }
+func (m Metadata) MustParseJsonMap(key string) (map[string]string, error) {
+	if val, ok := m[key]; ok && val != "" {
+		if val == "" {
+			return map[string]string{}, nil
+		}
+		parsedVal := make(map[string]string)
+		err := json.Unmarshal([]byte(val), &parsedVal)
+		if err != nil {
+			return nil, fmt.Errorf("invalid json conversion to map[string]string %s", val)
+		}
+		return parsedVal, nil
+	} else {
+		return map[string]string{}, nil
+	}
+}
