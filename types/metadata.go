@@ -44,6 +44,15 @@ func (m Metadata) ParseString(key, defaultValue string) string {
 		return defaultValue
 	}
 }
+
+func (m Metadata) ParseStringMap(key string, stringMap map[string]string) (string, error) {
+	if val, ok := stringMap[m[key]]; ok {
+		return val, nil
+	} else {
+		return "", fmt.Errorf("no valid key found")
+	}
+}
+
 func (m Metadata) MustParseString(key string) (string, error) {
 	if val, ok := m[key]; ok && val != "" {
 		return val, nil

@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/ghodss/yaml v1.0.0
+	github.com/go-redis/redis/v7 v7.4.0
 	github.com/go-resty/resty/v2 v2.3.0
 	github.com/json-iterator/go v1.1.10
 	github.com/kubemq-io/kubemq-go v1.4.0
