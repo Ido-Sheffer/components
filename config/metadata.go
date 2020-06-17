@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type Metadata struct {
@@ -37,7 +38,17 @@ func (m Metadata) MustParseString(key string) (string, error) {
 		return "", fmt.Errorf("value of key %s cannot be empty", key)
 	}
 }
-
+func (m Metadata) MustParseStringList(key string) ([]string, error) {
+	if val, ok := m.Properties[key]; ok && val != "" {
+		list := strings.Split(val, ",")
+		if len(list) == 0 {
+			return nil, fmt.Errorf("value of key %s cannot be empty", key)
+		}
+		return list, nil
+	} else {
+		return nil, fmt.Errorf("value of key %s cannot be empty", key)
+	}
+}
 func (m Metadata) MustParseInt(key string) (int, error) {
 
 	if val, ok := m.Properties[key]; ok && val != "" {

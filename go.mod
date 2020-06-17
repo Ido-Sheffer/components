@@ -3,6 +3,7 @@ module github.com/kubemq-hub/components
 go 1.14
 
 require (
+	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-redis/redis/v7 v7.4.0
 	github.com/go-resty/resty/v2 v2.3.0
