@@ -49,6 +49,15 @@ func (m Metadata) MustParseStringList(key string) ([]string, error) {
 		return nil, fmt.Errorf("value of key %s cannot be empty", key)
 	}
 }
+
+func (m Metadata) ParseStringMap(key string, stringMap map[string]string) (string, error) {
+	if val, ok := stringMap[m.Properties[key]]; ok {
+		return val, nil
+	} else {
+		return "", fmt.Errorf("no valid key found")
+	}
+}
+
 func (m Metadata) MustParseInt(key string) (int, error) {
 
 	if val, ok := m.Properties[key]; ok && val != "" {

@@ -15,11 +15,10 @@ import (
 
 // Client is a Client state store
 type Client struct {
-	name     string
-	client   *memcache.Client
-	opts     options
-	replicas int
-	log      *logger.Logger
+	name   string
+	client *memcache.Client
+	opts   options
+	log    *logger.Logger
 }
 
 func New() *Client {
