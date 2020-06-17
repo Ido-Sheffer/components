@@ -7,20 +7,6 @@ import (
 	"time"
 )
 
-var writeConcurrencyMap = map[string]string{
-	"majority": "majority",
-	"":         "",
-}
-
-var readConcurrencyMap = map[string]string{
-	"local":        "local",
-	"majority":     "majority",
-	"available":    "available",
-	"linearizable": "linearizable",
-	"snapshot":     "snapshot",
-	"":             "",
-}
-
 type options struct {
 	host             string
 	username         string
@@ -50,16 +36,8 @@ func parseOptions(cfg config.Metadata) (options, error) {
 	if err != nil {
 		return options{}, fmt.Errorf("error parsing collection name, %w", err)
 	}
-
-	o.writeConcurrency, err = cfg.ParseStringMap("write_concurrency", writeConcurrencyMap)
-	if err != nil {
-		return options{}, fmt.Errorf("error on parsing write concurrency, %w", err)
-	}
-
-	o.readConcurrency, err = cfg.ParseStringMap("read_concurrency", readConcurrencyMap)
-	if err != nil {
-		return options{}, fmt.Errorf("error on parsing read concurrency, %w", err)
-	}
+	o.writeConcurrency = cfg.ParseString("write_concurrency", "")
+	o.readConcurrency = cfg.ParseString("read_concurrency", "")
 
 	o.params = cfg.ParseString("params", "")
 	operationTimeoutSeconds, err := cfg.ParseIntWithRange("operation_timeout_seconds", 2, 0, math.MaxInt32)

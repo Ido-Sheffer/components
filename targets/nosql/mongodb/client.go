@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/kubemq-hub/components/config"
 	"github.com/kubemq-hub/components/pkg/logger"
@@ -61,7 +60,6 @@ func (c *Client) Init(ctx context.Context, cfg config.Metadata) error {
 		return fmt.Errorf("error in getting write concern object: %s", err)
 	}
 	rc, err := c.getReadConcernObject(c.opts.readConcurrency)
-
 	if err != nil {
 		return fmt.Errorf("error in getting read concern object: %s", err)
 	}
@@ -116,9 +114,11 @@ func (c *Client) getMongoDBClient(ctx context.Context) (*mongo.Client, error) {
 		uri = fmt.Sprintf(connectionURIFormat, c.opts.username, c.opts.password, c.opts.host, c.opts.database, c.opts.params)
 	}
 	clientOptions := monogOptions.Client().ApplyURI(uri)
-	ctx, cancel := context.WithTimeout(ctx, c.opts.operationTimeout)
-	defer cancel()
 	client, err := mongo.Connect(ctx, clientOptions)
+	if err != nil {
+		return nil, err
+	}
+	err = client.Ping(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +149,10 @@ func (c *Client) Get(ctx context.Context, meta metadata) (*types.Response, error
 	filter := bson.M{id: meta.key}
 	err := c.collection.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get key %s: %s", meta.key, err)
+		return types.NewResponse().
+			SetMetadataKeyValue("key", meta.key).
+			SetMetadataKeyValue("error", "true").
+			SetMetadataKeyValue("message", "no data found for this key"), nil
 	}
 	return types.NewResponse().
 		SetData([]byte(result.Value)).
